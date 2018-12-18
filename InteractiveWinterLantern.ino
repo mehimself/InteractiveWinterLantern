@@ -232,7 +232,7 @@ void animateHouse(bool screenTime) {
   setPixel(house[0], warmWhite, brightness);
 }
 void animateCloud() {
-  bool lightning = random(2000) < 1;
+  bool lightning = random(7000) < 1;
   byte cloudSize = sizeof(cloud);
   byte lightningCycles = brightness / 2;
   uint32_t color = coolWhite;

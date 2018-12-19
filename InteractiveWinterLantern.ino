@@ -53,12 +53,15 @@ byte brightness = 2;
 int period1 = 5100;
 int period2 = 2050;
 int period3 = 7800;
+
 unsigned long time = millis();
+
 unsigned long since = 0;
 unsigned long lastLo = 0;
 unsigned long lastHi = 0;
 int gestureTimeout = 3000;
 int gestureMinTime = 1000;
+
 unsigned long animateNextDay = 0;
 
 int dayDuration = 10000;
@@ -109,7 +112,7 @@ byte brightnessCurve(byte lo, byte hi, byte val, byte maxBrightness) {
   if (lo <= val && val < hi) {
     byte range = (hi - lo) / 2;
     byte center = lo + range;
-    float proportion = 1 - abs(float(center) - val) / range;
+    float proportion = 1 - (float(center) - val) / range;
     brightness = proportion * maxBrightness;
   }
   return brightness;
@@ -117,13 +120,13 @@ byte brightnessCurve(byte lo, byte hi, byte val, byte maxBrightness) {
 void animateAmbient() {
   uint32_t now = millis();
   int dayTime = now % dayDuration;
-  uint32_t hour = dayTime / (dayDuration / 24);
+  byte hour = dayTime / (dayDuration / 24);
   byte lo;
   byte hi;
   float maxIntensity = 255 - (255 - brightness) * 0.67; // brighter
   byte intensity = maxIntensity;
   animatingDay = animateNextDay <= now && now < animateNextDay + dayDuration;
-  resetAmbient();    
+  resetAmbient();
   if (animatingDay) {
     // fade star against sun animation
     lo = 0; hi = 6;

@@ -72,7 +72,9 @@ void animateReindeer() {
 }
 void resetAmbient() {
   for (byte i = 0; i < LEDCOUNT; i++) {
-    if (~(i == TV)) strip.setPixelColor(i, 0);
+    if (i != TV) {
+      strip.setPixelColor(i, 0);
+    }
   }
 }
 byte queueNextDayAnimation() {
@@ -221,16 +223,22 @@ void animateHouse(bool screenTime) {
   byte houseSize = sizeof(house);
   if (screenTime == true) {
     uint32_t tvColor = strip.getPixelColor(TV);
+    byte intensity = brightness * 1.5;
+    if (intensity > maxBrightness) {
+      intensity = maxBrightness;
+    }
     byte r = random(100);
     if (r < 1) {
       byte r = random(120);
       byte g = random(170);
       byte b = random(255);
-      setPixel(TV, strip.Color(r, g, b), 255);
+      setPixel(TV, strip.Color(r, g, b), intensity);
     } else {
-      setPixel(TV, tvColor, brightness);
+      strip.setPixelColor(TV, tvColor);
     }
-  } 
+  } else {
+    setPixel(TV, warmWhite, brightness);
+  }
   setPixel(house[0], warmWhite, brightness);
 }
 void animateCloud() {

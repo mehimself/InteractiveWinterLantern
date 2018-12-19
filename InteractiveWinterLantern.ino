@@ -46,6 +46,8 @@ int brightnessDamping = 20;
 bool lightningInProgress = false;
 byte lightningDuration = 0;
 
+float minBrightness = 5;
+float maxBrightness = 255;
 byte brightness = 2;
 
 int period1 = 5100;
@@ -232,7 +234,8 @@ void animateHouse(bool screenTime) {
   setPixel(house[0], warmWhite, brightness);
 }
 void animateCloud() {
-  bool lightning = random(7000) < 1;
+  bool tooLateForFlashes = brightness > minBrightness + 5;
+  bool lightning = random(7000) < 1 && tooLateForFlashes;
   byte cloudSize = sizeof(cloud);
   byte lightningCycles = brightness / 2;
   uint32_t color = coolWhite;
@@ -267,8 +270,6 @@ void setPixel(byte index, uint32_t color, byte luminosity) {
   strip.setPixelColor(index, color);
 }
 void getLightLevel(bool exponential) {
-  float minBrightness = 3;
-  float maxBrightness = 255;
   float dimmingFactor;
 
   byte nextValue;

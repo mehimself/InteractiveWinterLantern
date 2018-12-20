@@ -55,8 +55,9 @@ int period2 = 2050;
 int period3 = 7800;
 
 unsigned long time = millis();
+unsigned long now = time;
 
-unsigned long since = 0;
+unsigned long sinceLastSample = 0;
 unsigned long lastLo = 0;
 unsigned long lastHi = 0;
 int gestureTimeout = 3000;
@@ -67,7 +68,12 @@ unsigned long animateNextDay = 0;
 int dayDuration = 10000;
 int hourDuration = dayDuration / 24;
 
+float timeOfDay = 0;
+
 bool animatingDay = false;
+
+bool nightMode = true;
+bool dayMode = false;
 
 void animateReindeer() {
   byte herdSize = sizeof(herd);
@@ -120,88 +126,145 @@ byte brightnessCurve(byte lo, byte hi, float val, byte peakIntensity) {
   }
   return intensity;
 }
-void animateAmbient() {
-  uint32_t now = millis();
+void animateTime() {
+  now = millis();
   int dayTime = now % dayDuration;
-  float hour = float(dayTime) / hourDuration;
-  byte lo;
-  byte hi;
-  byte maxIntensity = 255 - (255 - brightness) * 0.67; // brighter
-  byte intensity = maxIntensity;
+  timeOfDay = float(dayTime) / hourDuration;  
   animatingDay = animateNextDay <= now && now < animateNextDay + dayDuration;
-  resetAmbient();
-  if (animatingDay) {
-    // fade star against sun animation
-    lo = 0; hi = 6;
-    if (lo <= hour && hour < hi) {
-      animateStar(brightness);
-    }
-    lo = 6; hi = 10;
-    if (lo <= hour && hour < hi) {
-      animateStar(brightnessDescending(lo, hi, hour, brightness));
-    }
-    lo = 15; hi = 18;
-    if (lo <= hour && hour < hi) {
-      animateStar(brightnessAscending(lo, hi, hour, brightness));
-    }
-    lo = 18;
-    if (lo <= hour) {
-      animateStar(brightness);
-    }
-    
-    // day
-    lo = 6; hi = 8;
-    if (lo <= hour && hour < hi) {
-      intensity = brightnessCurve(lo, hi, hour, maxIntensity);
-      setPixel(ambientRight4, red, intensity);
-    }
-    lo = 7; hi = 10;
-    if (lo <= hour && hour < hi) {
-      intensity = brightnessCurve(lo, hi, hour, maxIntensity);
-      setPixel(ambientRight3, orange, intensity);
-    }
-    lo = 8; hi = 13;
-    if (lo <= hour && hour < hi) {
-      intensity = brightnessCurve(lo, hi, hour, maxIntensity);
-      setPixel(ambientRight2, warmWhite, intensity);
-    }
-    lo = 8; hi = 14;
-    if (lo <= hour && hour < hi) {
-      intensity = brightnessCurve(lo, hi, hour, maxIntensity);
-      setPixel(ambientRight1, warmWhite, intensity);
-    }
-    // noon
-    lo = 10; hi = 16;
-    if (lo <= hour && hour < hi) {
-      intensity = brightnessCurve(lo, hi, hour, maxIntensity);
-      setPixel(ambientLeft1, warmWhite, intensity);
-    }
-    lo = 11; hi = 18;
-    if (lo <= hour && hour < hi) {
-      intensity = brightnessCurve(lo, hi, hour, maxIntensity);
-      setPixel(ambientLeft2, warmWhite, intensity);
-    }
-    lo = 14; hi = 17;
-    if (lo <= hour && hour < hi) {
-      intensity = brightnessCurve(lo, hi, hour, maxIntensity);
-      setPixel(ambientLeft3, orange, intensity);
-    }
-    lo = 15; hi = 18;
-    if (lo <= hour && hour < hi) {
-      intensity = brightnessCurve(lo, hi, hour, maxIntensity);
-      setPixel(ambientLeft4, red, intensity);
-    }
-  } else {
-    animateStar(brightness);
-  }
-  animateHouse(animateNextDay > now);
 }
-void animateStar(byte intensity) {
+void animateStar() {
+  byte lo = 6;
+  byte hi = 10;
+  
   uint32_t color = coolWhite;
+
+  bool fadeOut;
+  bool fadeIn;
+  
   if (random(30) < 1) {
     color = warmWhite;
   }
-  setPixel(STAR, color, intensity);
+
+  lo = 6; hi = 10;
+  fadeOut = animatingDay && lo <= timeOfDay && timeOfDay < hi;
+  if (fadeOut) {
+    setPixel(STAR, color, brightnessDescending(lo, hi, timeOfDay, brightness));
+  }
+  lo = 15; hi = 18;
+  fadeIn = animatingDay && lo <= timeOfDay && timeOfDay < hi;
+  if (fadeIn) {
+    setPixel(STAR, color, brightnessAscending(lo, hi, timeOfDay, brightness));
+  }
+  setPixel(STAR, color, brightness);
+}
+void animateSunrise(byte maxIntensity) {
+  byte lo = 6; 
+  byte hi = 8;
+  byte intensity = brightness;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessCurve(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientRight4, red, intensity);
+  }
+  lo = 7; hi = 10;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessCurve(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientRight3, orange, intensity);
+  }
+}
+void animateMorning(byte maxIntensity) {
+  byte lo = 8; 
+  byte hi = 12;
+  byte intensity = brightness;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessAscending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientRight2, warmWhite, intensity);
+  }
+  lo = 8; hi = 13;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessAscending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientRight1, warmWhite, intensity);
+  }
+}
+void animateNoon(byte maxIntensity) {
+  byte lo = 12; 
+  byte hi = 15;
+  byte intensity = brightness;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessDescending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientRight2, warmWhite, intensity);
+  }
+  lo = 12; hi = 16;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessDescending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientRight1, warmWhite, intensity);
+  }
+  lo = 10; hi = 13;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessAscending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientLeft1, warmWhite, intensity);
+  }
+  lo = 11; hi = 14;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessAscending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientLeft2, warmWhite, intensity);
+  }
+}
+void animateAfternoon(byte maxIntensity) {
+  byte lo = 13; 
+  byte hi = 16;
+  byte intensity = brightness;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessDescending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientLeft1, warmWhite, intensity);
+  }
+  lo = 14; hi = 17;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessDescending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientLeft2, warmWhite, intensity);
+  }
+}
+void animateEvening(byte maxIntensity) {
+  byte lo = 14; 
+  byte hi = 16;
+  byte intensity = brightness;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessAscending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientLeft3, orange, intensity);
+  }
+  lo = 16; hi = 17;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessAscending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientLeft4, red, intensity);
+  }
+}
+void animateSunset(byte maxIntensity) {
+  byte lo = 16; 
+  byte hi = 17;
+  byte intensity = brightness;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessDescending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientLeft3, orange, intensity);
+  }
+  lo = 17; hi = 18;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessDescending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientLeft4, red, intensity);
+  }
+}
+void animateSun() {
+  byte maxIntensity = 255 - (255 - brightness) * 0.67; // brighter
+  animateSunrise(maxIntensity); 
+  animateMorning(maxIntensity);
+  animateNoon(maxIntensity);
+  animateAfternoon(maxIntensity);
+  animateEvening(maxIntensity);
+  animateSunset(maxIntensity);    
+}
+void animateHeavens() {
+  animateStar();
+  if (animatingDay) {
+    animateSun();
+  } 
 }
 void animateTree() {
   int elapsed = millis() - time;
@@ -225,14 +288,13 @@ void animateTree() {
   
   setPixel(TREE, color, intensity);
 }
-void animateHouse(bool screenTime) {
-  byte houseSize = sizeof(house);
+void animateTV(bool screenTime) {
+  
   if (screenTime == true) {
+    
     uint32_t tvColor = strip.getPixelColor(TV);
-    byte intensity = brightness * 1.5;
-    if (intensity > maxBrightness) {
-      intensity = maxBrightness;
-    }
+    byte intensity = min(maxBrightness, brightness * 1.5);
+    
     byte r = random(100);
     if (r < 1) {
       byte r = random(120);
@@ -243,13 +305,26 @@ void animateHouse(bool screenTime) {
       strip.setPixelColor(TV, tvColor);
     }
   } else {
-    setPixel(TV, warmWhite, brightness);
+    setPixel(TV, 0, 0);
+    if (animatingDay && 18 < timeOfDay) {
+      setPixel(TV, warmWhite, min(brightness, 128));
+    }
+    if(animatingDay && timeOfDay < 2) {
+      setPixel(TV, warmWhite, min(brightness, 128));
+    }
   }
-  setPixel(house[0], warmWhite, brightness);
+}
+void animateHouse() {
+  bool sunIsToRiseSoon = animateNextDay > now;
+  animateTV(sunIsToRiseSoon);
+  if (18 < timeOfDay || timeOfDay < 8) {
+    byte intensity = brightness;
+    if (intensity > 128) intensity = 128;
+    setPixel(house[0], warmWhite, intensity);
+  }
 }
 void animateCloud() {
-  bool tooLateForFlashes = brightness > minBrightness + 5;
-  bool lightning = random(7000) < 1 && tooLateForFlashes;
+  bool lightning = random(7000) < 1 && nightMode == false;
   byte cloudSize = sizeof(cloud);
   byte lightningCycles = brightness / 2;
   uint32_t color = coolWhite;
@@ -286,46 +361,59 @@ void setPixel(byte index, uint32_t color, byte luminosity) {
 void getLightLevel(bool exponential) {
   float dimmingFactor;
 
-  byte nextValue;
+  byte newBrightness;
   int VLow = 660;
   int VHigh = 30;
   int v = analogRead(LIGHTSENSORPIN);
-  
-  if (v < VHigh) { v = VHigh; }
-  if (v > VLow) { v = VLow; }
-  
-  float a = float(VLow - v) / (VLow - VHigh); // proportional value in sensing range
-  float b = float(maxBrightness - minBrightness) * a; // normalised proportional brightness
-  
-  nextValue = b + minBrightness; // proportional brightness
-  
-  dimmingFactor = cos(float(nextValue) / 255 * 0.5 * PI) * 255; // eased to grow brighter slowly in beginning
-  nextValue = 255 - dimmingFactor;
-  
-  if (nextValue > brightness) {
-    sensorVectorBalance++;
-  } else if (brightness > nextValue) {
-    sensorVectorBalance--;
-  }
-  if (sensorVectorBalance > sensorCalibration + sensorDampening) {
-    lastHi = millis();
-    brightness++;
-    sensorVectorBalance = sensorCalibration;
-  } else if (sensorVectorBalance < sensorCalibration - sensorDampening) {
-    unsigned long now = millis();
-    int sinceLo = now - lastLo;
-    if (gestureMinTime <= sinceLo && sinceLo < gestureTimeout) {
-      if (lastHi - lastLo > 500) {
-        queueNextDayAnimation();
-      }
+
+  if (now - sinceLastSample > brightnessDamping) {
+    sinceLastSample = now;
+
+    if (v < VHigh) { v = VHigh; }
+    if (v > VLow) { v = VLow; }
+
+    int sensorRange = VLow - VHigh;
+    float brightnessRange = float(maxBrightness) - minBrightness;
+    float sensorProportion = float(VLow - v) / sensorRange; 
+    float intensity = sensorProportion * brightnessRange; 
+    
+    newBrightness = intensity + minBrightness;
+    float ascendingQuadrant = PI * 0.5; 
+    dimmingFactor = cos(float(newBrightness) / 255 * ascendingQuadrant) * 255; // cosine easing
+    newBrightness = 255 - dimmingFactor;
+    
+    if (brightness < newBrightness) {
+      sensorVectorBalance++;
+    } else if (newBrightness < brightness) {
+      sensorVectorBalance--;
     }
-    lastLo = now;
-    brightness--;
-    sensorVectorBalance = sensorCalibration;
+    if (sensorVectorBalance > sensorCalibration + sensorDampening) {
+      lastHi = millis();
+      brightness++;
+      sensorVectorBalance = sensorCalibration;
+    } else if (sensorVectorBalance < sensorCalibration - sensorDampening) {
+      unsigned long now = millis();
+      int sinceLo = now - lastLo;
+      if (gestureMinTime <= sinceLo && sinceLo < gestureTimeout) {
+        if (lastHi - lastLo > 500) {
+          queueNextDayAnimation();
+        }
+      }
+      lastLo = now;
+      brightness--;
+      sensorVectorBalance = sensorCalibration;
+    }
+
+    brightness = max(minBrightness, brightness);
+    brightness = min(maxBrightness, brightness);
+
+    nightMode = brightness <= minBrightness + 5;
+    dayMode = brightness >= maxBrightness - 5;
+
   }
-  
-  if (brightness < minBrightness) brightness = minBrightness;
-  if (brightness > maxBrightness) brightness = maxBrightness;
+}
+void animateSanta() {
+  setPixel(SANTA, red, brightness);
 }
 void setup() {
   pinMode(LIGHTSENSORPIN, INPUT);
@@ -334,12 +422,12 @@ void setup() {
   strip.show(); 
 }
 void loop() {
-  if (millis() - since > brightnessDamping) {
-    since = millis();
-    getLightLevel(true);
-  }
-  animateAmbient();
-  setPixel(SANTA, red, brightness);
+  resetAmbient();
+  animateTime();
+  getLightLevel(true);
+  animateHeavens();
+  animateHouse();
+  animateSanta();
   animateTree();
   animateReindeer();
   animateCloud();

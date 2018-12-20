@@ -159,22 +159,33 @@ void animateStar() {
 }
 void animateSunrise(byte maxIntensity) {
   byte lo = 6; 
-  byte hi = 8;
+  byte hi = 7;
   byte intensity = brightness;
   if (lo <= timeOfDay && timeOfDay < hi) {
-    intensity = brightnessCurve(lo, hi, timeOfDay, maxIntensity);
+    intensity = brightnessAscending(lo, hi, timeOfDay, min(maxIntensity, 128));
     setPixel(ambientRight4, red, intensity);
   }
-  lo = 7; hi = 10;
+  lo = 7; hi = 8;
   if (lo <= timeOfDay && timeOfDay < hi) {
-    intensity = brightnessCurve(lo, hi, timeOfDay, maxIntensity);
+    intensity = brightnessDescending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientRight4, red, intensity);
+  }
+  lo = 7; hi = 9;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessAscending(lo, hi, timeOfDay, maxIntensity);
     setPixel(ambientRight3, orange, intensity);
   }
+  
 }
 void animateMorning(byte maxIntensity) {
-  byte lo = 8; 
+  byte lo = 9; 
   byte hi = 12;
   byte intensity = brightness;
+  if (lo <= timeOfDay && timeOfDay < hi) {
+    intensity = brightnessDescending(lo, hi, timeOfDay, maxIntensity);
+    setPixel(ambientRight3, orange, intensity);
+  }
+  lo = 8; hi = 12;
   if (lo <= timeOfDay && timeOfDay < hi) {
     intensity = brightnessAscending(lo, hi, timeOfDay, maxIntensity);
     setPixel(ambientRight2, warmWhite, intensity);
@@ -247,7 +258,7 @@ void animateSunset(byte maxIntensity) {
   }
   lo = 17; hi = 18;
   if (lo <= timeOfDay && timeOfDay < hi) {
-    intensity = brightnessDescending(lo, hi, timeOfDay, maxIntensity);
+    intensity = brightnessDescending(lo, hi, timeOfDay, min(maxIntensity, 128));
     setPixel(ambientLeft4, red, intensity);
   }
 }
@@ -289,9 +300,8 @@ void animateTree() {
   setPixel(TREE, color, intensity);
 }
 void animateTV(bool screenTime) {
-  
   if (screenTime == true) {
-    
+
     uint32_t tvColor = strip.getPixelColor(TV);
     byte intensity = min(maxBrightness, brightness * 1.5);
     
@@ -306,21 +316,21 @@ void animateTV(bool screenTime) {
     }
   } else {
     setPixel(TV, 0, 0);
-    if (animatingDay && 18 < timeOfDay) {
-      setPixel(TV, warmWhite, min(brightness, 128));
-    }
-    if(animatingDay && timeOfDay < 2) {
-      setPixel(TV, warmWhite, min(brightness, 128));
+    if (!nightMode) {
+      if (animatingDay && 18 < timeOfDay) {
+        setPixel(TV, warmWhite, min(brightness, 128));
+      }
+      if(animatingDay && timeOfDay < 2) {
+        setPixel(TV, warmWhite, min(brightness, 128));
+      }
     }
   }
 }
 void animateHouse() {
   bool sunIsToRiseSoon = animateNextDay > now;
   animateTV(sunIsToRiseSoon);
-  if (18 < timeOfDay || timeOfDay < 8) {
-    byte intensity = brightness;
-    if (intensity > 128) intensity = 128;
-    setPixel(house[0], warmWhite, intensity);
+  if (nightMode || 17 < timeOfDay || timeOfDay < 5) {
+    setPixel(house[0], warmWhite, min(brightness, 128));
   }
 }
 void animateCloud() {

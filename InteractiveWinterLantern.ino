@@ -89,7 +89,7 @@ byte queueNextDayAnimation() {
     animateNextDay = now + tillNextDay;
   }
 }
-byte brightnessAscending(byte lo, byte hi, byte val, byte maxBrightness) {
+byte brightnessAscending(byte lo, byte hi, float val, byte maxBrightness) {
   byte brightness = 0;
   if (lo <= val && val < hi) {
     byte range = (hi - lo);
@@ -99,7 +99,7 @@ byte brightnessAscending(byte lo, byte hi, byte val, byte maxBrightness) {
   }
   return brightness;
 }
-byte brightnessDescending(byte lo, byte hi, byte val, byte maxBrightness) {
+byte brightnessDescending(byte lo, byte hi, float val, byte maxBrightness) {
   byte brightness = 0;
   if (lo <= val && val < hi) {
     byte range = (hi - lo);

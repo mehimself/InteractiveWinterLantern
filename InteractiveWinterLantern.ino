@@ -65,6 +65,8 @@ int gestureMinTime = 1000;
 unsigned long animateNextDay = 0;
 
 int dayDuration = 10000;
+int hourDuration = dayDuration / 24;
+
 bool animatingDay = false;
 
 void animateReindeer() {
@@ -107,7 +109,7 @@ byte brightnessDescending(byte lo, byte hi, byte val, byte maxBrightness) {
   }
   return brightness;
 }
-byte brightnessCurve(byte lo, byte hi, byte val, byte maxBrightness) {
+byte brightnessCurve(byte lo, byte hi, float val, byte maxBrightness) {
   byte brightness = 0;
   if (lo <= val && val < hi) {
     byte range = (hi - lo) / 2;
@@ -120,10 +122,10 @@ byte brightnessCurve(byte lo, byte hi, byte val, byte maxBrightness) {
 void animateAmbient() {
   uint32_t now = millis();
   int dayTime = now % dayDuration;
-  byte hour = dayTime / (dayDuration / 24);
+  float hour = float(dayTime) / hourDuration;
   byte lo;
   byte hi;
-  float maxIntensity = 255 - (255 - brightness) * 0.67; // brighter
+  byte maxIntensity = 255 - (255 - brightness) * 0.67; // brighter
   byte intensity = maxIntensity;
   animatingDay = animateNextDay <= now && now < animateNextDay + dayDuration;
   resetAmbient();

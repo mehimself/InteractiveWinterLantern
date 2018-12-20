@@ -71,7 +71,7 @@ int hourDuration = dayDuration / 24;
 float timeOfDay = 0;
 
 bool animatingDay = false;
-
+bool sunIsShining = false;
 bool nightMode = true;
 bool dayMode = false;
 
@@ -131,6 +131,7 @@ void animateTime() {
   int dayTime = now % dayDuration;
   timeOfDay = float(dayTime) / hourDuration;  
   animatingDay = animateNextDay <= now && now < animateNextDay + dayDuration;
+  sunIsShining = animatingDay && (7 <= timeOfDay || timeOfDay < 17);
 }
 void animateStar() {
   byte lo = 6;
@@ -263,7 +264,7 @@ void animateSunset(byte maxIntensity) {
   }
 }
 void animateSun() {
-  byte maxIntensity = 255 - (255 - brightness) * 0.67; // brighter
+  byte maxIntensity = 255 - (255 - brightness) * 0.5; // brighter
   animateSunrise(maxIntensity); 
   animateMorning(maxIntensity);
   animateNoon(maxIntensity);
@@ -326,16 +327,16 @@ void animateTV(bool screenTime) {
 void animateHouse() {
   bool sunIsToRiseSoon = animateNextDay > now;
   animateTV(sunIsToRiseSoon);
-  if (nightMode || 17 < timeOfDay || timeOfDay < 5) {
+  if (!sunIsShining) {
     setPixel(house[0], warmWhite, min(brightness, 128));
   }
 }
 void animateCloud() {
-  bool lightning = random(7000) < 1 && nightMode == false;
+  bool lightning = random(4000) < 1 && nightMode == false;
   byte cloudSize = sizeof(cloud);
-  byte lightningCycles = brightness / 2;
   uint32_t color = coolWhite;
   float intensity = brightness / 2;
+  byte lightningCycles = intensity;
    
   if (lightning) {
     lightningInProgress = true;
@@ -349,9 +350,11 @@ void animateCloud() {
     lightningInProgress = false;
   }
   lightningDuration++;
-  for (byte p = 0; p < cloudSize; p++) {
-    setPixel(cloud[p], color, intensity);
-  }    
+  if (!sunIsShining) {
+    for (byte p = 0; p < cloudSize; p++) {
+      setPixel(cloud[p], color, intensity);
+    }
+  }
 }
 void setPixel(byte index, uint32_t color, byte luminosity) {
 

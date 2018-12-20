@@ -307,10 +307,7 @@ void animateTV(bool screenTime) {
     
     byte r = random(100);
     if (r < 1) {
-      byte r = random(120);
-      byte g = random(170);
-      byte b = random(255);
-      setPixel(TV, strip.Color(r, g, b), intensity);
+      setPixel(TV, strip.Color(random(120), random(170), random(255)), intensity);
     } else {
       strip.setPixelColor(TV, tvColor);
     }

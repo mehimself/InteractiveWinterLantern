@@ -89,35 +89,36 @@ byte queueNextDayAnimation() {
     animateNextDay = now + tillNextDay;
   }
 }
-byte brightnessAscending(byte lo, byte hi, float val, byte maxBrightness) {
-  byte brightness = 0;
+byte brightnessAscending(byte lo, byte hi, float val, byte peakIntensity) {
+  byte intensity = 0;
   if (lo <= val && val < hi) {
-    byte range = (hi - lo);
-    byte center = lo + range;
+    float range = (float(hi) - lo);
+    float center = lo + range;
     float proportion = 1 - (float(hi) - val) / range;
-    brightness = proportion * maxBrightness;
+    intensity = proportion * peakIntensity;
   }
-  return brightness;
+  return intensity;
 }
-byte brightnessDescending(byte lo, byte hi, float val, byte maxBrightness) {
-  byte brightness = 0;
+byte brightnessDescending(byte lo, byte hi, float val, byte peakIntensity) {
+  byte intensity = 0;
   if (lo <= val && val < hi) {
-    byte range = (hi - lo);
-    byte center = lo + range;
+    float range = (float(hi) - lo);
+    float center = lo + range;
     float proportion = (float(hi) - val) / range;
-    brightness = proportion * maxBrightness;
+    intensity = proportion * peakIntensity;
   }
-  return brightness;
+  return intensity;
 }
-byte brightnessCurve(byte lo, byte hi, float val, byte maxBrightness) {
-  byte brightness = 0;
+byte brightnessCurve(byte lo, byte hi, float val, byte peakIntensity) {
+  byte intensity = brightness;
   if (lo <= val && val < hi) {
-    byte range = (hi - lo) / 2;
-    byte center = lo + range;
-    float proportion = 1 - (float(center) - val) / range;
-    brightness = proportion * maxBrightness;
+    float range = (float(hi) - lo) / 2;
+    float center = lo + range;
+    float proportion = abs((center - val) / range);
+    float proximityToCenter = 1 - proportion;
+    intensity = proximityToCenter * peakIntensity;
   }
-  return brightness;
+  return intensity;
 }
 void animateAmbient() {
   uint32_t now = millis();
